@@ -5,18 +5,17 @@ import numpy as np
 
 # class for each point of a triangle
 class Point:
-    def __init__(self, x_, y_, z_):
-        self.x = x_
-        self.y = y_
-        self.z = z_
+    def __init__(self, coord):
+        self.x = coord[0]
+        self.y = coord[1]
+        self.z = coord[2]
     def __repr__(self):
         return str(self.x)+", "+str(self.y)+", "+str(self.z)
 
 # class for triangle, contain point and the norm of the triangle, norm isn't used
 class Triangle:
-    def __init__(self, p0_, p1_, p2_, norm_):
+    def __init__(self, p0_, p1_, p2_):
         self.p = [p0_, p1_, p2_]
-        self.norm = norm_
     def __repr__(self):
         return "\n ["+self.p[0].__str__()+"] \t["+self.p[1].__str__()+"] \t["+self.p[2].__str__()+"]"
 
@@ -41,33 +40,17 @@ class Object:
 #     UINT16    – Attribute byte count      -  2 bytes
 # end
 def read_stl(filename, objet):
-
-    triangle_dtype = np.dtype([
-            ('Normal', np.float32, (3,)),
-            ('Vertex1', np.float32, (3,)),
-            ('Vertex2', np.float32, (3,)),
-            ('Vertex3', np.float32, (3,)),
-            ('Attribute', '<i2', (1,)),
-        ])
-
     with open(filename, "rb") as f:
         Header = f.read(80)
         N_triangles = struct.unpack('i', f.read(4))[0]
-
-        raw_triangles = np.zeros((N_triangles,), dtype=triangle_dtype)
-        
-        for i in range(0, N_triangles, 10):
-            d = np.fromfile(f, dtype=triangle_dtype, count=10)
-            raw_triangles[i:i+len(d)] = d
-
-    triangles = []
-    for raw_triangle in raw_triangles :
-        p0 = Point(raw_triangle['Vertex1'][0],raw_triangle['Vertex1'][1],raw_triangle['Vertex1'][2])
-        p1 = Point(raw_triangle['Vertex2'][0],raw_triangle['Vertex2'][1],raw_triangle['Vertex2'][2])
-        p2 = Point(raw_triangle['Vertex3'][0],raw_triangle['Vertex3'][1],raw_triangle['Vertex3'][2])
-        triangle = Triangle(p0, p1, p2,raw_triangle['Normal'][0])
-        objet.triangles.append(triangle)
-
+        for i in range(0, N_triangles):
+            np.fromfile(f, np.float32, 3)
+            p0 = Point(np.fromfile(f, np.float32, 3))
+            p1 = Point(np.fromfile(f, np.float32, 3))
+            p2 = Point(np.fromfile(f, np.float32, 3))
+            np.fromfile(f, '<i2', 1)
+            triangle = Triangle(p0, p1, p2)
+            objet.triangles.append(triangle)
     return
 
 # find the minimum et maximum Z heights of the object
@@ -191,8 +174,8 @@ def slicer(geom_filename, settings):
 
 def main():
     
-    path = "/Users/remibouteiller/Documents/ETUDES/M2/STAGE/GENCORES/GENCORES-software_test/"
-    stlfile = path+"cube2.stl"
+    path = "/Users/remibouteiller/Documents/ETUDES/M2/STAGE/GENCORES/GENCORES-software_test/Slicer proposal/"
+    stlfile = path+"cube.stl"
     settings = {"infill_origin": (0, 0), "path_fill_width": 1, "path_layer_size": 2}
     slicer(stlfile, settings)
 
